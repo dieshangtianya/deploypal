@@ -1,0 +1,158 @@
+name: Deploypal Release
+on:
+  # 自动执行发布任务的触发条件
+  push:
+    # 配置beta分支，只有推送beta分支才会触发以下任务
+    branches:
+      - beta
+
+  # 手动执行发布任务的触发条件
+  # 这里使用了两个输入参数，分别是target-branch和dry-run
+  # 其中target-branch是下拉框，用户选择master或beta分支
+  # dry-run是布尔值，表示是否仅试运行不实际发布
+  # 其需要结合步骤中的判断来执行
+  workflow_dispatch:
+    inputs:
+      target-branch:
+        description: "Publish branch(default:master)"
+        required: true
+        type: choice
+        options:
+          - master
+          - beta
+        default: "master"
+      dry-run:
+        description: "Only trial run, not actual release"
+        required: false
+        type: boolean
+
+# 定义任务
+jobs:
+  # 定义release任务
+  release:
+    # 定义运行的虚拟机环境
+    runs-on: ubuntu-latest
+    # 设置任务级别权限
+    permissions:
+      contents: write  # 创建标签
+      issues: write    # 创建issue评论（失败通知）
+      pull-requests: write # 如果需要在PR中评论
+    # 设置任务级别变量，可供其他作业访问
+    outputs:
+      duration_seconds: ${{ steps.end-workflow.outputs.duration_seconds }}
+      start_time: ${{ steps.end-workflow.outputs.start_time }}
+      end_time: ${{ steps.end-workflow.outputs.end_time }}
+    timeout-minutes: 30
+    # 设置任务的触发条件，只能是beta合并后自动执行，或者选择分支手动执行, 其他条件不执行
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/beta') ||
+      (github.event_name == 'workflow_dispatch' && 
+      (github.event.inputs.target-branch == 'master' || github.event.inputs.target-branch == 'beta'))
+    # 定义任务的执行步骤
+    steps:
+      # 第零步：打印开始日志
+      - name: Start workflow
+        id: start-workflow
+        run: |
+          echo "========================================"
+          echo "🚀 Start to release"
+          echo "📦 Project: ${{ github.repository }}"
+          echo "🌿 Branch: ${{ github.event.inputs.target-branch || github.ref_name }}"
+          echo "📝 Committer: ${{ github.sha }}"
+          echo "👤 Trigger: ${{ github.actor }}"
+          echo "🕐 TriggerTime: $(date)"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.event.inputs.target-branch }}" == "master" ]]; then
+              echo "🎯 Publish Environment: Production"
+            else
+              echo "🧪 Publish Environment: Beta Prerelease"
+            fi
+          else
+            echo "🧪 Publish Environment: Beta Prerelease"
+          fi
+          echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "========================================"
+     
+      # 第一步：验证环境变量
+      - name: Validate environment
+        run: |
+            # 检查必要的secrets
+            if [[ -z "${{ secrets.NPM_TOKEN }}" ]]; then
+               echo "❌ NPM_TOKEN not set in secrets"
+               exit 1
+            else
+               echo "NPM_TOKEN: ${{ secrets.NPM_TOKEN }}"
+               echo "✅Environment variables validated"
+            fi
+
+      # 第二步：检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 必须！semantic-release需要完整的git历史
+          # 手动触发时，拉取target-branch中指定的分支,或者自动触发时的当前分支
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target-branch || github.ref }}
+          token: ${{ secrets.GH_TOKEN }}
+     
+      # 第三步：设置打包环境
+      - name: Prepare release environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24" # 需要的Node.js版本
+      
+      # 第四步：配置yarn缓存
+      - name: Yarn Cache configuration
+        uses: actions/cache@v3
+        id: yarn-cache
+        with:
+          path: |
+            **/.yarn
+            **/node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-
+      
+      # 第五步：安装依赖
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      
+      # 第六步：构建项目
+      - name: Build project
+        run: yarn build
+
+      # 第七步: 构建项目后的处理工作
+      - name: Post-build tasks
+        run: yarn build:after
+
+      # 第八步：执行publish
+      - name: Publish NPM package
+        if: success() # 明确要求前面步骤都成功
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] && [[ "${{ github.event.inputs.dry-run }}" == "true" ]]; then
+            yarn semantic-release-next
+          else
+            yarn semantic-release
+          fi
+
+      # 第九步，打印执行结果
+      - name: End workflow
+        id: end-workflow
+        if: always()  # 确保即使失败也执行
+        run: |
+          end_time=$(date +%s)
+          start_time=${{ steps.start-workflow.outputs.start_time }}
+          duration=$((end_time - start_time))
+          echo "duration_seconds=$duration" >> $GITHUB_OUTPUT
+          echo "end_time=$end_time" >> $GITHUB_OUTPUT
+          echo "start_time=$start_time" >> $GITHUB_OUTPUT
+
+          echo "========================================"
+          if [[ "${{ job.status }}" == "success" ]]; then
+            echo "✅ Project released successfully"
+          else
+            echo "❌ Project release failed"
+          fi
+          echo "🕒Total time: ${duration} seconds"
+          echo "========================================"

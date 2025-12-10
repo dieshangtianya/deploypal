@@ -1,0 +1,22 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "node": "12" // 或其他目标环境
+        }
+      }
+    ],
+    "@babel/preset-typescript"
+  ],
+  "plugins": [
+    [
+      "@babel/plugin-transform-runtime",
+      {
+        "corejs": false, // 不引入 Polyfill
+        "regenerator": false // node 12 已经支持 async/await
+      }
+    ]
+  ]
+}

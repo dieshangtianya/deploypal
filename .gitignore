@@ -1,0 +1,29 @@
+# Node.js dependencies
+node_modules/
+
+# TypeScript build output
+dist/
+build/
+lib/
+
+# Logs
+*.log
+yarn-debug.log*
+yarn-error.log*
+
+# OS-specific files
+.DS_Store
+
+# IDE-specific files
+.idea/
+.vscode/
+
+# Test coverage
+coverage/
+
+# npm-debug files
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
