@@ -1,5 +1,6 @@
 {
   "watch": ["src"],
   "ext": "ts",
-  "exec": "ts-node src/cli.ts"
+  "exec": "ts-node src/cli.ts",
+  "stdin": false
 }
