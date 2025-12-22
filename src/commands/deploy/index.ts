@@ -33,6 +33,7 @@ const deployProject = async (program: Command, params: Partial<DeployCommandOpti
   logger.success('\n', result);
 };
 
+// register the deploy command
 const register = (program: Command) => {
   program
     .command('deploy')
