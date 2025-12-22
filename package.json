@@ -18,7 +18,7 @@
     "build": "babel src --out-dir lib --extensions \".ts\"",
     "build:after": "chmod-cli bin/cli.js -m 0o755",
     "type-check": "tsc --noEmit",
-    "start": "node bin/cli.js",
+    "start": "node bin/cli.js init",
     "dev": "nodemon",
     "lint": "eslint --ext .ts src/ --fix",
     "prepare": "husky",
@@ -31,8 +31,14 @@
     "@babel/runtime": "^7.28.4",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
+    "crypto": "^1.0.1",
+    "dayjs": "^1.11.19",
     "figlet": "^1.9.4",
-    "globals": "^16.5.0"
+    "globals": "^16.5.0",
+    "inquirer": "12.11.1",
+    "ora": "^9.0.0",
+    "progress": "^2.0.3",
+    "ssh2-sftp-client": "^12.0.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.28.3",
@@ -44,9 +50,10 @@
     "@commitlint/config-conventional": "^20.2.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
+    "@types/inquirer": "^9.0.9",
     "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.48.1",
-    "@typescript-eslint/parser": "^8.48.1",
+    "@types/progress": "^2.0.7",
+    "@types/ssh2-sftp-client": "^9.0.6",
     "chmod-cli": "^2.0.1",
     "commitizen": "^4.3.1",
     "cz-conventional-changelog": "^3.3.0",
@@ -58,7 +65,8 @@
     "prettier": "^3.7.4",
     "semantic-release": "^25.0.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.0"
   },
   "lint-staged": {
     "src/**/*.{js,ts}": [
