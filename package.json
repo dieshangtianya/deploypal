@@ -1,6 +1,6 @@
 {
   "name": "deploypal",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "A deploy cli tool for hepling user to deploy front web app to target server, cloud storage and CDN",
   "keywords": [
     "deploypal",
