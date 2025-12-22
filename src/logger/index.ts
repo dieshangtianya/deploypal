@@ -15,9 +15,9 @@ function stringifyParams(params: any[]) {
       return String(item);
     }
     return util.inspect(item, {
-      depth: null, // 显示对象的所有层级（默认只显示2层）
-      colors: false, // 关闭 util.inspect 的内置颜色（避免和 chalk 冲突）
-      compact: false, // 展开显示对象（更易读）
+      depth: null,
+      colors: false,
+      compact: false,
     });
   });
   return formattedArgs.join('');

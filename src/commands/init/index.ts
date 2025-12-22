@@ -1,6 +1,7 @@
 import { Command } from 'commander/typings';
 import initConfig from './init-config';
 
+// register the init config command
 const register = (program: Command) => {
   program
     .command('init')
