@@ -32,14 +32,22 @@ const createDeployOptions = async function (deployConfig: DeployPalConfig, optio
   }
 
   // set the remote project directory
-  const { name, remoteDir, useSymlink, currentSymlink } = deployOptions;
+  const { name, remoteDir, useSymlink, currentSymlink, environment } = deployOptions;
   if (remoteDir && name) {
-    deployOptions.remoteReleaseDir = path.join(remoteDir, name, DEFAULT_RELEASE_DIR);
+    if (environment) {
+      deployOptions.remoteReleaseDir = path.join(remoteDir, name, environment, DEFAULT_RELEASE_DIR);
+    } else {
+      deployOptions.remoteReleaseDir = path.join(remoteDir, name, DEFAULT_RELEASE_DIR);
+    }
   }
 
   // set the current symlink path
   if (remoteDir && name && useSymlink && currentSymlink) {
-    deployOptions.currentSymlinkDir = path.join(remoteDir, name, currentSymlink);
+    if (environment) {
+      deployOptions.currentSymlinkDir = path.join(remoteDir, name, environment, currentSymlink);
+    } else {
+      deployOptions.currentSymlinkDir = path.join(remoteDir, name, currentSymlink);
+    }
   }
 
   // set the ssh private key
