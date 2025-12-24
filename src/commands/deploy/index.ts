@@ -44,6 +44,7 @@ const register = (program: Command) => {
     .option('--auth-type <auth-type>', 'Authentication type(Password/PrivateKey)')
     .option('--password <password>', 'Password to login server')
     .option('--ssh-key-path <ssh-key-path>', 'SSH key file path')
+    .option('--ssh-private-key <ssh-private-key>', 'SSH key text')
     .option('--passphrase <pass-phrase>', 'Passphrase to protect the ssh key')
     .option('--release-version <release-version>', 'Release version for the app')
     .option('--use-symlink', 'Determin deploy strategy')
