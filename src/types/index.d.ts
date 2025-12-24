@@ -26,6 +26,7 @@ interface DeployCommandOptions {
   currentSymlink: string;
   localDir: string;
   remoteDir: string;
+  environment: string;
 }
 
 interface DeployOptions extends DeployCommandOptions {
