@@ -16,7 +16,9 @@ const figletArtText = figlet.textSync('DeployPal', {
 // console log the figlet art text in green color
 console.log(chalk.green(figletArtText));
 
-process.stdin.setRawMode(true);
+if (process.stdin.isTTY) {
+  process.stdin.setRawMode(true);
+}
 
 // Define CLI program informaation
 program.name('deploypal').version(pkg.version).description('A CLI tool to deploy web app to server or cloud');
