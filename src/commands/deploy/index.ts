@@ -51,6 +51,7 @@ const register = (program: Command) => {
     .option('--current-symlink <current-symlink>', 'Current symlink file name for server')
     .option('--local-dir <local-dir>', 'Local directory to deploy')
     .option('--remote-dir <remote-dir>', 'Remote directory for uploaded to')
+    .option('--environment <environment>', 'Deploy environment')
     .action(async (params) => {
       await deployProject(program, params);
       process.exit(0);
