@@ -64,6 +64,11 @@ const createDeployOptions = async function (deployConfig: DeployPalConfig, optio
     }
   }
 
+  // set the compression config
+  if (typeof deployOptions.enableCompression !== 'boolean') {
+    deployOptions.enableCompression = false;
+  }
+
   return deployOptions;
 };
 
@@ -123,6 +128,11 @@ const validateDeployOptions = function (options: DeployOptions) {
 
   if (!options.localDir) {
     message = 'Please provide option [local-dir]';
+    return createValidateResult(message);
+  }
+
+  if (typeof options.enableCompression !== 'boolean') {
+    message = 'Please provide valid value for option [enable-compression]';
     return createValidateResult(message);
   }
 

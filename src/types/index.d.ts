@@ -10,6 +10,7 @@ interface DeployPalConfig {
   currentSymlink: string;
   localDir: string;
   remoteDir: string;
+  enableCompression?: boolean;
 }
 
 interface DeployCommandOptions {
@@ -27,6 +28,7 @@ interface DeployCommandOptions {
   localDir: string;
   remoteDir: string;
   environment: string;
+  enableCompression: boolean;
 }
 
 interface DeployOptions extends DeployCommandOptions {
@@ -58,4 +60,11 @@ interface FileBasicInfo {
 interface FileBasInfo {
   path: string;
   size: number;
+}
+
+declare module 'adm-zip' {
+  const AdmZip: {
+    new (): any;
+  };
+  export default AdmZip;
 }

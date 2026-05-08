@@ -24,6 +24,7 @@ const getDefaultConfig = () => {
     currentSymlink: DEFAULT_CURRENT,
     localDir: DEFAULT_LOCAL_DIR,
     remoteDir: DEFAULT_SERVER_DIR,
+    enableCompression: false,
   };
   return defaultConfig;
 };
@@ -53,7 +54,7 @@ const initiConfig = async (program: Command, params: any) => {
       },
       {
         type: 'input',
-        name: 'username',
+        name: 'userName',
         message: 'SSH username:',
         default: DEFAULT_USERNAME,
       },
@@ -68,7 +69,7 @@ const initiConfig = async (program: Command, params: any) => {
       },
       {
         type: 'input',
-        name: 'keyPath',
+        name: 'sshKeyPath',
         message: 'SSH private key path:',
         default: DEFAULT_SSH_KEY_PATH,
         when: (answers) => answers.authType === AuthType.PrivateKey,
@@ -104,6 +105,12 @@ const initiConfig = async (program: Command, params: any) => {
         name: 'remoteDir',
         message: 'Remote directory:',
         default: DEFAULT_SERVER_DIR,
+      },
+      {
+        type: 'confirm',
+        name: 'enableCompression',
+        message: 'Enable Compression',
+        default: false,
       },
     ]);
     config = {
