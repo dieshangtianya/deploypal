@@ -145,6 +145,7 @@ class SFTPDeployer {
       const localDir = this.deployOptions.localDir;
       const zipFileName = `${this.getReleaseVersion()}.zip`;
       const outputFile = path.join(localDir, zipFileName);
+      // compress the local directory to a zip file
       await zipper.compressDirectory(localDir, outputFile);
 
       const remoteZipFilePath = path.posix.join(releaseVersionDir, zipFileName);
