@@ -1,8 +1,9 @@
 import path from 'path';
-import ora from 'ora';
+import ora, { Ora } from 'ora';
 import dayjs from 'dayjs';
 import { SFTPClient, versionGenerator, fileHelper } from '../../core';
 import { createUUID } from '../../helper';
+import zipper from '../../helper/zipper';
 
 class SFTPDeployer {
   logger: ILogger;
@@ -16,7 +17,7 @@ class SFTPDeployer {
     this.sftpClient = new SFTPClient();
   }
 
-  async connect() {
+  createSSH2ConnConfig() {
     const options: any = {
       host: this.deployOptions.host,
       port: this.deployOptions.port,
@@ -32,7 +33,11 @@ class SFTPDeployer {
     if (this.deployOptions.passphrase) {
       options.passphrase = this.deployOptions.passphrase;
     }
+    return options;
+  }
 
+  async connect() {
+    const options: any = this.createSSH2ConnConfig();
     try {
       await this.sftpClient.connect(options);
     } catch (error: any) {
@@ -72,8 +77,8 @@ class SFTPDeployer {
   }
 
   async uploadToReleaseDir(releaseVersionDir: string) {
-    const spinner = ora(`Uploading files to ${path.basename(releaseVersionDir)}...\n`).start();
     let releaseVersionDirCreated = false;
+    let spinner: Ora | undefined;
     try {
       // create release version directory
       const isReleaseDirExist = await this.sftpClient.exists(releaseVersionDir);
@@ -87,27 +92,16 @@ class SFTPDeployer {
       await this.sftpClient.mkdir(releaseVersionDir, true);
       releaseVersionDirCreated = true;
 
-      const files = await fileHelper.getFiles(this.deployOptions.localDir);
-      let uploaded = 0;
-      for (const file of files) {
-        const relativePath = path.relative(this.deployOptions.localDir, file.path);
-        const remotePath = path.posix.join(releaseVersionDir, relativePath.replace(/\\/g, '/'));
-        // get the parent directory name
-        const remoteParent = path.posix.dirname(remotePath);
-        // make sure the parent directory exist
-        await this.sftpClient.mkdir(remoteParent, true);
-        // upload file
-        await this.sftpClient.put(file.path, remotePath);
-        uploaded++;
-
-        // when uploaded file count is many times of 10, then change the spinner text
-        if (uploaded % 10 === 0) {
-          spinner.text = `Uploading... ${uploaded}/${files.length} files`;
-        }
+      if (this.deployOptions.enableCompression) {
+        await this.uploadFilesToReleaseDirWithCompression(releaseVersionDir);
+      } else {
+        spinner = ora(`Uploading files to ${path.basename(releaseVersionDir)}...\n`).start();
+        await this.uploadFilesToReleaseDirNormally(releaseVersionDir, spinner!);
       }
-      spinner.succeed(`Uploaded ${uploaded} files to ${path.basename(releaseVersionDir)}`);
     } catch (error: any) {
-      spinner.fail(`Failed to upload files to ${path.basename(releaseVersionDir)}...\n`);
+      if (spinner) {
+        spinner.fail(`Failed to upload files to ${path.basename(releaseVersionDir)}...\n`);
+      }
       try {
         if (releaseVersionDirCreated) {
           // remove the release version directory
@@ -118,6 +112,57 @@ class SFTPDeployer {
         this.logger.warn(`Remove release version directory error: ${err.message}`);
       }
       throw error;
+    }
+  }
+
+  async uploadFilesToReleaseDirNormally(releaseVersionDir: string, spinner: Ora) {
+    const files = await fileHelper.getFiles(this.deployOptions.localDir);
+    let uploaded = 0;
+    for (const file of files) {
+      const relativePath = path.relative(this.deployOptions.localDir, file.path);
+      const remotePath = path.posix.join(releaseVersionDir, relativePath.replace(/\\/g, '/'));
+      // get the parent directory name
+      const remoteParent = path.posix.dirname(remotePath);
+      // make sure the parent directory exist
+      await this.sftpClient.mkdir(remoteParent, true);
+      // upload file
+      await this.sftpClient.put(file.path, remotePath);
+      uploaded++;
+
+      // when uploaded file count is many times of 10, then change the spinner text
+      if (uploaded % 10 === 0) {
+        spinner.text = `Uploading... ${uploaded}/${files.length} files`;
+      }
+    }
+  }
+
+  async uploadFilesToReleaseDirWithCompression(releaseVersionDir: string) {
+    // there are many packages can help to compress directory or files.
+    // 1. simple tools: adm-zip/zip-lib/zip-dir
+    // 2. great tools for complex situations: archiver/@lyleunderwood/streaming-zipper
+    // Here we simply use adm-zip to compress files and we can change tools when more complicated senarios comes.
+    try {
+      const localDir = this.deployOptions.localDir;
+      const zipFileName = `${this.getReleaseVersion()}.zip`;
+      const outputFile = path.join(localDir, zipFileName);
+      await zipper.compressDirectory(localDir, outputFile);
+
+      const remoteZipFilePath = path.posix.join(releaseVersionDir, zipFileName);
+      // get the parent directory name
+      const remoteParent = path.posix.dirname(remoteZipFilePath);
+      // make sure the parent directory exist
+      await this.sftpClient.mkdir(remoteParent, true);
+      this.logger.info(`Uploading the zip file to server...`);
+      // upload the zip file to server
+      await this.sftpClient.put(outputFile, remoteZipFilePath);
+      this.logger.info(`Upload the zip file to server successfully`);
+      // unzip the file
+      await this.sftpClient.unzip(remoteZipFilePath, releaseVersionDir);
+      // remove the zip file in local machine
+      await fileHelper.deletefile(outputFile);
+      this.logger.info(`Unzip the files in server successfully`);
+    } catch (error: any) {
+      throw new Error(`Failed to compress directory: ${error.message}`);
     }
   }
 

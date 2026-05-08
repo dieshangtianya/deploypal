@@ -122,4 +122,31 @@ export default class SFTPClient extends BaseSFTPClient implements ISFTPClient {
       });
     });
   }
+
+  async unzip(zipFilePath: string, targetDir: string) {
+    const unzipCommand = `unzip -o ${zipFilePath} -d ${targetDir} && rm -f ${zipFilePath}`;
+    return new Promise((resolve, reject) => {
+      this.client.exec(unzipCommand, (err: any, stream: any) => {
+        if (err) {
+          reject(err);
+        }
+        let stdout = '';
+        let stderr = '';
+        stream
+          .on('close', (code: number) => {
+            if (code === 0) {
+              resolve(stdout.trim());
+            } else {
+              reject(new Error(`unzip failed with error: ${stderr}`));
+            }
+          })
+          .on('data', (data: any) => {
+            stdout += data.toString();
+          })
+          .stderr.on('data', (data: any) => {
+            stderr += data.toString();
+          });
+      });
+    });
+  }
 }

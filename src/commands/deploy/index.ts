@@ -52,6 +52,7 @@ const register = (program: Command) => {
     .option('--local-dir <local-dir>', 'Local directory to deploy')
     .option('--remote-dir <remote-dir>', 'Remote directory for uploaded to')
     .option('--environment <environment>', 'Deploy environment')
+    .option('--enable-compression <enable-compression>', 'Enable to compression target directory')
     .action(async (params) => {
       await deployProject(program, params);
       process.exit(0);

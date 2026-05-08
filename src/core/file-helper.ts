@@ -61,3 +61,7 @@ export function resolveSSHKeyPath(filePath: string) {
 
   return path.resolve(filePath);
 }
+
+export async function deletefile(filePath: string) {
+  return fs.unlink(filePath);
+}
