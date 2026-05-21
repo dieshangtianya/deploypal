@@ -24,7 +24,9 @@ const createDeployOptions = async function (deployConfig: DeployPalConfig, optio
 
   // set the project name
   const defaultProjectName = await getDefaultProjectName();
-  deployOptions.name = defaultProjectName;
+  if (!deployOptions.name && defaultProjectName) {
+    deployOptions.name = defaultProjectName;
+  }
 
   // set the release version
   if (!deployOptions.releaseVersion) {
